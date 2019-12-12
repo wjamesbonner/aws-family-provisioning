@@ -31,88 +31,88 @@ param(
 )
 
 if ($help) {
-	Write-Output ("`t aws_create_vpc.ps1 will configure an existing ECS cluster tagged as part of the service family to run a new instance of the service, or create a new cluster if none exist already")
-	Write-Output ("`t Prerequisites: Powershell")
-	Write-Output ("`t ")
-	Write-Output ("`t Parameters:")
-	Write-Output ("`t ")
-	Write-Output ("`t serviceFamily")
-	Write-Output ("`t     The name of the service family.")
-	Write-Output ("`t     Default: arn:aws:elasticloadbalancing:us-west-2:8675309:loadbalancer/app/lb-name/eff143")
+    Write-Output ("`t aws_create_vpc.ps1 will configure an existing ECS cluster tagged as part of the service family to run a new instance of the service, or create a new cluster if none exist already")
+    Write-Output ("`t Prerequisites: Powershell")
+    Write-Output ("`t ")
+    Write-Output ("`t Parameters:")
+    Write-Output ("`t ")
+    Write-Output ("`t serviceFamily")
+    Write-Output ("`t     The name of the service family.")
+    Write-Output ("`t     Default: arn:aws:elasticloadbalancing:us-west-2:8675309:loadbalancer/app/lb-name/eff143")
     Write-Output ("`t     Alias: f")
-	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -serviceFamily my-awesome-service")
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -serviceFamily my-awesome-service")
     Write-Output ("`t     Example: .\aws_create_vpc.ps1 -s my-awesome-service")
 	
     Write-Output ("`t ")
-	Write-Output ("`t serviceFamilyTagName")
-	Write-Output ("`t     The name of the tag that stores the service family name")
-	Write-Output ("`t     Default: {0}" -f $serviceFamilyTagName)
+    Write-Output ("`t serviceFamilyTagName")
+    Write-Output ("`t     The name of the tag that stores the service family name")
+    Write-Output ("`t     Default: {0}" -f $serviceFamilyTagName)
     Write-Output ("`t     Alias: n")
-	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -serviceFamilyTagName service-family")
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -serviceFamilyTagName service-family")
     Write-Output ("`t     Example: .\aws_create_vpc.ps1 -n service-family")
 
     Write-Output ("`t ")
-	Write-Output ("`t cidrBlock")
-	Write-Output ("`t     The CIDR block to use for this VPC")
-	Write-Output ("`t     Default: {0}" -f $cidrBlock)
+    Write-Output ("`t cidrBlock")
+    Write-Output ("`t     The CIDR block to use for this VPC")
+    Write-Output ("`t     Default: {0}" -f $cidrBlock)
     Write-Output ("`t     Alias: c")
-	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -cidrBlock {0}" -f $cidrBlock)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -cidrBlock {0}" -f $cidrBlock)
     Write-Output ("`t     Example: .\aws_create_vpc.ps1 -c {0}" -f $cidrBlock)
 
     Write-Output ("`t ")
-	Write-Output ("`t instanceTenancy")
-	Write-Output ("`t     The default tenancy for this VPC, i.e. dedicated hosting versus shared hosting.")
-	Write-Output ("`t     Default: {0}" -f $instanceTenancy)
+    Write-Output ("`t instanceTenancy")
+    Write-Output ("`t     The default tenancy for this VPC, i.e. dedicated hosting versus shared hosting.")
+    Write-Output ("`t     Default: {0}" -f $instanceTenancy)
     Write-Output ("`t     Alias: t")
-	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -instanceTenancy {0}" -f $instanceTenancy)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -instanceTenancy {0}" -f $instanceTenancy)
     Write-Output ("`t     Example: .\aws_create_vpc.ps1 -t {0}" -f $instanceTenancy)
 
     Write-Output ("`t ")
-	Write-Output ("`t subnetworks")
-	Write-Output ("`t     Array of subnetworks to define for the VPC.  Must positionally match the zones parameter.")
-	Write-Output ("`t     Default: {0}" -f $subnetworks)
+    Write-Output ("`t subnetworks")
+    Write-Output ("`t     Array of subnetworks to define for the VPC.  Must positionally match the zones parameter.")
+    Write-Output ("`t     Default: {0}" -f $subnetworks)
     Write-Output ("`t     Alias: s")
-	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -subnetworks {0}" -f $subnetworks)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -subnetworks {0}" -f $subnetworks)
     Write-Output ("`t     Example: .\aws_create_vpc.ps1 -s {0}" -f $subnetworks)
 
     Write-Output ("`t ")
-	Write-Output ("`t zones")
-	Write-Output ("`t     The zones to to place the subnets in; corresponds positionally to the subnetworks parameter")
-	Write-Output ("`t     Default: {0}" -f $zones)
+    Write-Output ("`t zones")
+    Write-Output ("`t     The zones to to place the subnets in; corresponds positionally to the subnetworks parameter")
+    Write-Output ("`t     Default: {0}" -f $zones)
     Write-Output ("`t     Alias: z")
-	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -zones {0}" -f $zones)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -zones {0}" -f $zones)
     Write-Output ("`t     Example: .\aws_create_vpc.ps1 -z {0}" -f $zones)
 
     Write-Output ("`t ")
-	Write-Output ("`t profileName")
-	Write-Output ("`t     The name of the AWS configure credential profile to use, leave empty for default.")
-	Write-Output ("`t     Default: {0}" -f $profileName)
+    Write-Output ("`t profileName")
+    Write-Output ("`t     The name of the AWS configure credential profile to use, leave empty for default.")
+    Write-Output ("`t     Default: {0}" -f $profileName)
     Write-Output ("`t     Alias: l")
-	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -profileName {0}" -f "myProfile")
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -profileName {0}" -f "myProfile")
     Write-Output ("`t     Example: .\aws_create_vpc.ps1 -l {0}" -f "myProfile")
 
     Write-Output ("`t ")
-	Write-Output ("`t loadBalancer")
-	Write-Output ("`t     Indicates whether to provisiona load balancer for the environment.")
-	Write-Output ("`t     Default: {0}" -f $loadBalancer)
+    Write-Output ("`t loadBalancer")
+    Write-Output ("`t     Indicates whether to provisiona load balancer for the environment.")
+    Write-Output ("`t     Default: {0}" -f $loadBalancer)
     Write-Output ("`t     Alias: l")
-	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -loadBalancer {0}" -f $loadBalancer)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -loadBalancer {0}" -f $loadBalancer)
     Write-Output ("`t     Example: .\aws_create_vpc.ps1 -l {0}" -f $loadBalancer)
 
     Write-Output ("`t ")
-	Write-Output ("`t managementMode")
-	Write-Output ("`t     The management mode of the service, i.e. automatic or manual")
-	Write-Output ("`t     Default: {0}" -f $managementMode)
+    Write-Output ("`t managementMode")
+    Write-Output ("`t     The management mode of the service, i.e. automatic or manual")
+    Write-Output ("`t     Default: {0}" -f $managementMode)
     Write-Output ("`t     Alias: m")
-	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -managementMode {0}" -f $managementMode)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -managementMode {0}" -f $managementMode)
     Write-Output ("`t     Example: .\aws_create_vpc.ps1 -m {0}" -f $managementMode)
 
-    return
+    return $false
 }
 
 if($subnetworks.Length -ne $zones.Length) {
     Write-Output "`t The number of subnetworks must match the number of zones"
-    return
+    return $false
 }
 
 # Prompt for name if not specified
@@ -127,7 +127,7 @@ if($profileName -ne "") {
         Write-Output ("`t AWS Profile set to {0}!" -f $profileName)
     } catch {
         Write-Output "`t Failed to set specified profile - aborting."
-        return
+        return $false
     }
 }
 
@@ -147,6 +147,27 @@ $managementMode
 
 # load necessary modules
 .\aws_load_default_modules.ps1
+
+# Checking for existing VPC with service family
+Write-Output ""
+Write-Output "`t Searching for conflicting service family VPCs."
+Write-Output "`t Building tag filters and retrieving tags..."
+$filters = @()
+$filter = New-Object -TypeName Amazon.EC2.Model.Filter
+$filter.Name = "resource-type"
+$filter.Values.Add("vpc")
+$filters += $filter
+
+$filter = New-Object -TypeName Amazon.EC2.Model.Filter
+$filter.Name = "tag:service-family"
+$filter.Values.Add($serviceFamily)
+$filters += $filter
+$vpcTags = Get-EC2Tag -Filter $filters
+
+if($vpcTags -ne $null) {
+    Write-Output "`t Service already exists - aborting!"
+    return $false
+}
 
 # Creating the virtual private cloud
 Write-Output ""
