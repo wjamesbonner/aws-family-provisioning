@@ -20,6 +20,9 @@ param(
     [Alias("m")]
     [string] $managementMode  = "automatic",
 
+    [Alias("p")]
+    [string] $profileName  = "",
+
     [Alias("l")]
     [switch] $loadBalancer = $false,
 
@@ -109,6 +112,16 @@ if ($serviceFamily -eq "") {
 	$serviceFamily = Read-Host "Enter the name of the service family"
 }
 $serviceFamily = $serviceFamily.ToLower()
+
+if($profileName -ne "") {
+    try {
+        Set-AWSCredential -ProfileName $profileName
+        Write-Host ("`t AWS Profile set to {0}!" -f $profileName)
+    } catch {
+        Write-Host "`t Failed to set specified profile - aborting."
+        return
+    }
+}
 
 # navigate to library root
 cd $PSScriptRoot
