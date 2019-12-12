@@ -84,6 +84,14 @@ if ($help) {
     Write-Host ("`t     Example: .\aws_create_vpc.ps1 -z {0}" -f $zones)
 
     Write-Host ("`t ")
+	Write-Host ("`t profileName")
+	Write-Host ("`t     The name of the AWS configure credential profile to use, leave empty for default.")
+	Write-Host ("`t     Default: {0}" -f $profileName)
+    Write-Host ("`t     Alias: l")
+	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -profileName {0}" -f "myProfile")
+    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -l {0}" -f "myProfile")
+
+    Write-Host ("`t ")
 	Write-Host ("`t loadBalancer")
 	Write-Host ("`t     Indicates whether to provisiona load balancer for the environment.")
 	Write-Host ("`t     Default: {0}" -f $loadBalancer)
@@ -126,7 +134,7 @@ if($profileName -ne "") {
 # navigate to library root
 cd $PSScriptRoot
 
-$transcriptName = ("aws_create_vpc-{0}.txt" -f [DateTimeOffset]::Now.ToUnixTimeSeconds())
+$transcriptName = ("aws_create_vpc-{0}.transcript" -f [DateTimeOffset]::Now.ToUnixTimeSeconds())
 Start-Transcript -Path $transcriptName
 
 $serviceFamily
@@ -385,8 +393,10 @@ if($vpcValidated -and (($networksValidated | Unique).Count -eq 1 -and $networksV
 
 if($validationPassed) {
     Write-Host "`t Environment successfully validated"
+    Write-Host "success"
 } else {
     Write-Host "`t Validation failed, review logs."
+    Write-Host "failure"
 }
 
 Stop-Transcript
