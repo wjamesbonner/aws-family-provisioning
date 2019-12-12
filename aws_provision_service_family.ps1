@@ -104,6 +104,12 @@ if($subnetworks.Length -ne $zones.Length) {
     return
 }
 
+# Prompt for name if not specified
+if ($serviceFamily -eq "") {
+	$serviceFamily = Read-Host "Enter the name of the service family"
+}
+$serviceFamily = $serviceFamily.ToLower()
+
 # navigate to library root
 cd $PSScriptRoot
 
