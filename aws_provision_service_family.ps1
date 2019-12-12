@@ -391,11 +391,13 @@ if($vpcValidated -and (($networksValidated | Unique).Count -eq 1 -and $networksV
     $validationPassed = $true
 }
 
+$validationPassed
 if($validationPassed) {
     Write-Output "`t Environment successfully validated"
 } else {
     Write-Output "`t Validation failed, review logs."
 }
 
-$validationPassed
 Stop-Transcript
+
+return $validationPassed
