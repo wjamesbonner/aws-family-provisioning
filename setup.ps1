@@ -8,28 +8,28 @@ param(
 )
 
 if ($help) {
-	Write-Host "Setup is a script that performs the one time operations needed to use this library.  It should also be run on update of the library."
-	Write-Host "Prerequisites: Powershell"
-	Write-Host ""
-	Write-Host "Parameters:"
-	Write-Host ""
-	Write-Host "force"
-	Write-Host "    Force the reinstallation and upgrade of modules."
-	Write-Host "    Default: true"
-    Write-Host "    Alias: f"
-	Write-Host "    Example: ./setup.ps1 -force"
-    Write-Host "    Example: ./setup.ps1 -f"
+	Write-Output "Setup is a script that performs the one time operations needed to use this library.  It should also be run on update of the library."
+	Write-Output "Prerequisites: Powershell"
+	Write-Output ""
+	Write-Output "Parameters:"
+	Write-Output ""
+	Write-Output "force"
+	Write-Output "    Force the reinstallation and upgrade of modules."
+	Write-Output "    Default: true"
+    Write-Output "    Alias: f"
+	Write-Output "    Example: ./setup.ps1 -force"
+    Write-Output "    Example: ./setup.ps1 -f"
 	return
 }
 
 if((Get-PSRepository -Name "PSGallery").InstallationPolicy -ne "Trusted") {
-    Write-Host "Setting PSGallery to trusted."
+    Write-Output "Setting PSGallery to trusted."
     Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 }
 
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if(!($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) {
-    Write-Host "Please re-run as administrator."
+    Write-Output "Please re-run as administrator."
     return
 }
 
@@ -150,7 +150,7 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.ElasticLoadBalancingV2) -or $for
 }
 
 if($changesMade) {
-    Write-Host "Modules successfully installed and updated."
+    Write-Output "Modules successfully installed and updated."
 }else {
-    Write-Host "Existing modules updated, no missing modules detected."
+    Write-Output "Existing modules updated, no missing modules detected."
 }
