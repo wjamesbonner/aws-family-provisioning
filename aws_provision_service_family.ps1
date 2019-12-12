@@ -31,87 +31,87 @@ param(
 )
 
 if ($help) {
-	Write-Host ("`t aws_create_vpc.ps1 will configure an existing ECS cluster tagged as part of the service family to run a new instance of the service, or create a new cluster if none exist already")
-	Write-Host ("`t Prerequisites: Powershell")
-	Write-Host ("`t ")
-	Write-Host ("`t Parameters:")
-	Write-Host ("`t ")
-	Write-Host ("`t serviceFamily")
-	Write-Host ("`t     The name of the service family.")
-	Write-Host ("`t     Default: arn:aws:elasticloadbalancing:us-west-2:8675309:loadbalancer/app/lb-name/eff143")
-    Write-Host ("`t     Alias: f")
-	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -serviceFamily my-awesome-service")
-    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -s my-awesome-service")
+	Write-Output ("`t aws_create_vpc.ps1 will configure an existing ECS cluster tagged as part of the service family to run a new instance of the service, or create a new cluster if none exist already")
+	Write-Output ("`t Prerequisites: Powershell")
+	Write-Output ("`t ")
+	Write-Output ("`t Parameters:")
+	Write-Output ("`t ")
+	Write-Output ("`t serviceFamily")
+	Write-Output ("`t     The name of the service family.")
+	Write-Output ("`t     Default: arn:aws:elasticloadbalancing:us-west-2:8675309:loadbalancer/app/lb-name/eff143")
+    Write-Output ("`t     Alias: f")
+	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -serviceFamily my-awesome-service")
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -s my-awesome-service")
 	
-    Write-Host ("`t ")
-	Write-Host ("`t serviceFamilyTagName")
-	Write-Host ("`t     The name of the tag that stores the service family name")
-	Write-Host ("`t     Default: {0}" -f $serviceFamilyTagName)
-    Write-Host ("`t     Alias: n")
-	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -serviceFamilyTagName service-family")
-    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -n service-family")
+    Write-Output ("`t ")
+	Write-Output ("`t serviceFamilyTagName")
+	Write-Output ("`t     The name of the tag that stores the service family name")
+	Write-Output ("`t     Default: {0}" -f $serviceFamilyTagName)
+    Write-Output ("`t     Alias: n")
+	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -serviceFamilyTagName service-family")
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -n service-family")
 
-    Write-Host ("`t ")
-	Write-Host ("`t cidrBlock")
-	Write-Host ("`t     The CIDR block to use for this VPC")
-	Write-Host ("`t     Default: {0}" -f $cidrBlock)
-    Write-Host ("`t     Alias: c")
-	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -cidrBlock {0}" -f $cidrBlock)
-    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -c {0}" -f $cidrBlock)
+    Write-Output ("`t ")
+	Write-Output ("`t cidrBlock")
+	Write-Output ("`t     The CIDR block to use for this VPC")
+	Write-Output ("`t     Default: {0}" -f $cidrBlock)
+    Write-Output ("`t     Alias: c")
+	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -cidrBlock {0}" -f $cidrBlock)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -c {0}" -f $cidrBlock)
 
-    Write-Host ("`t ")
-	Write-Host ("`t instanceTenancy")
-	Write-Host ("`t     The default tenancy for this VPC, i.e. dedicated hosting versus shared hosting.")
-	Write-Host ("`t     Default: {0}" -f $instanceTenancy)
-    Write-Host ("`t     Alias: t")
-	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -instanceTenancy {0}" -f $instanceTenancy)
-    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -t {0}" -f $instanceTenancy)
+    Write-Output ("`t ")
+	Write-Output ("`t instanceTenancy")
+	Write-Output ("`t     The default tenancy for this VPC, i.e. dedicated hosting versus shared hosting.")
+	Write-Output ("`t     Default: {0}" -f $instanceTenancy)
+    Write-Output ("`t     Alias: t")
+	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -instanceTenancy {0}" -f $instanceTenancy)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -t {0}" -f $instanceTenancy)
 
-    Write-Host ("`t ")
-	Write-Host ("`t subnetworks")
-	Write-Host ("`t     Array of subnetworks to define for the VPC.  Must positionally match the zones parameter.")
-	Write-Host ("`t     Default: {0}" -f $subnetworks)
-    Write-Host ("`t     Alias: s")
-	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -subnetworks {0}" -f $subnetworks)
-    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -s {0}" -f $subnetworks)
+    Write-Output ("`t ")
+	Write-Output ("`t subnetworks")
+	Write-Output ("`t     Array of subnetworks to define for the VPC.  Must positionally match the zones parameter.")
+	Write-Output ("`t     Default: {0}" -f $subnetworks)
+    Write-Output ("`t     Alias: s")
+	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -subnetworks {0}" -f $subnetworks)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -s {0}" -f $subnetworks)
 
-    Write-Host ("`t ")
-	Write-Host ("`t zones")
-	Write-Host ("`t     The zones to to place the subnets in; corresponds positionally to the subnetworks parameter")
-	Write-Host ("`t     Default: {0}" -f $zones)
-    Write-Host ("`t     Alias: z")
-	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -zones {0}" -f $zones)
-    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -z {0}" -f $zones)
+    Write-Output ("`t ")
+	Write-Output ("`t zones")
+	Write-Output ("`t     The zones to to place the subnets in; corresponds positionally to the subnetworks parameter")
+	Write-Output ("`t     Default: {0}" -f $zones)
+    Write-Output ("`t     Alias: z")
+	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -zones {0}" -f $zones)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -z {0}" -f $zones)
 
-    Write-Host ("`t ")
-	Write-Host ("`t profileName")
-	Write-Host ("`t     The name of the AWS configure credential profile to use, leave empty for default.")
-	Write-Host ("`t     Default: {0}" -f $profileName)
-    Write-Host ("`t     Alias: l")
-	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -profileName {0}" -f "myProfile")
-    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -l {0}" -f "myProfile")
+    Write-Output ("`t ")
+	Write-Output ("`t profileName")
+	Write-Output ("`t     The name of the AWS configure credential profile to use, leave empty for default.")
+	Write-Output ("`t     Default: {0}" -f $profileName)
+    Write-Output ("`t     Alias: l")
+	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -profileName {0}" -f "myProfile")
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -l {0}" -f "myProfile")
 
-    Write-Host ("`t ")
-	Write-Host ("`t loadBalancer")
-	Write-Host ("`t     Indicates whether to provisiona load balancer for the environment.")
-	Write-Host ("`t     Default: {0}" -f $loadBalancer)
-    Write-Host ("`t     Alias: l")
-	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -loadBalancer {0}" -f $loadBalancer)
-    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -l {0}" -f $loadBalancer)
+    Write-Output ("`t ")
+	Write-Output ("`t loadBalancer")
+	Write-Output ("`t     Indicates whether to provisiona load balancer for the environment.")
+	Write-Output ("`t     Default: {0}" -f $loadBalancer)
+    Write-Output ("`t     Alias: l")
+	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -loadBalancer {0}" -f $loadBalancer)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -l {0}" -f $loadBalancer)
 
-    Write-Host ("`t ")
-	Write-Host ("`t managementMode")
-	Write-Host ("`t     The management mode of the service, i.e. automatic or manual")
-	Write-Host ("`t     Default: {0}" -f $managementMode)
-    Write-Host ("`t     Alias: m")
-	Write-Host ("`t     Example: .\aws_create_vpc.ps1 -managementMode {0}" -f $managementMode)
-    Write-Host ("`t     Example: .\aws_create_vpc.ps1 -m {0}" -f $managementMode)
+    Write-Output ("`t ")
+	Write-Output ("`t managementMode")
+	Write-Output ("`t     The management mode of the service, i.e. automatic or manual")
+	Write-Output ("`t     Default: {0}" -f $managementMode)
+    Write-Output ("`t     Alias: m")
+	Write-Output ("`t     Example: .\aws_create_vpc.ps1 -managementMode {0}" -f $managementMode)
+    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -m {0}" -f $managementMode)
 
     return
 }
 
 if($subnetworks.Length -ne $zones.Length) {
-    Write-Host "`t The number of subnetworks must match the number of zones"
+    Write-Output "`t The number of subnetworks must match the number of zones"
     return
 }
 
@@ -124,9 +124,9 @@ $serviceFamily = $serviceFamily.ToLower()
 if($profileName -ne "") {
     try {
         Set-AWSCredential -ProfileName $profileName
-        Write-Host ("`t AWS Profile set to {0}!" -f $profileName)
+        Write-Output ("`t AWS Profile set to {0}!" -f $profileName)
     } catch {
-        Write-Host "`t Failed to set specified profile - aborting."
+        Write-Output "`t Failed to set specified profile - aborting."
         return
     }
 }
@@ -149,19 +149,19 @@ $managementMode
 .\aws_load_default_modules.ps1
 
 # Creating the virtual private cloud
-Write-Host ""
-Write-Host "`t Begin building and configuring the virtual private cloud."
-Write-Host "`t Creating VPC..."
+Write-Output ""
+Write-Output "`t Begin building and configuring the virtual private cloud."
+Write-Output "`t Creating VPC..."
 $vpc = New-EC2VPC -CidrBlock $cidrBlock -InstanceTenancy $instanceTenancy
 $vpc
 
 do{
-    Write-Host ("`t Checking VPC {0} state..." -f $vpc.VpcId)
+    Write-Output ("`t Checking VPC {0} state..." -f $vpc.VpcId)
     $vpc = Get-EC2Vpc -VpcId $vpc.VpcId
     Start-Sleep -Seconds 5
 } while($vpc.State -ne "available")
 
-Write-Host "`t Building environment tags..."
+Write-Output "`t Building environment tags..."
 $hash = @{Key="Name"; Value=$serviceFamily}
 $nameTag = [PSCustomObject]$hash
 $nameTag
@@ -174,24 +174,24 @@ $hash = @{Key="management-mode"; Value=$managementMode}
 $managementTag = [PSCustomObject]$hash
 $managementTag
 
-Write-Host "`t Tagging VPC..."
+Write-Output "`t Tagging VPC..."
 New-EC2Tag -Resource $vpc.VpcId -Tag $nameTag
 New-EC2Tag -Resource $vpc.VpcId -Tag $serviceTag
 New-EC2Tag -Resource $vpc.VpcId -Tag $managementTag
 
-Write-Host "`t Building subnets..."
+Write-Output "`t Building subnets..."
 $networks = @()
 for($i=0;$i -lt $subnetworks.Length;$i++) {
     $network = New-EC2Subnet -VpcId $vpc.VpcId -CidrBlock $subnetworks[$i] -AvailabilityZone $zones[$i]
     $network
     do{
-        Write-Host ("`t Checking subnet {0} state..." -f $network.CidrBlock)
+        Write-Output ("`t Checking subnet {0} state..." -f $network.CidrBlock)
         $network = Get-EC2Subnet -SubnetId $network.SubnetId
         $network
         Start-Sleep -Seconds 5
     } while($network.State -ne "available")
 
-    Write-Host "`t Tagging subnet..."
+    Write-Output "`t Tagging subnet..."
     New-EC2Tag -Resource $network.SubnetId -Tag $nameTag
     New-EC2Tag -Resource $network.SubnetId -Tag $serviceTag
     New-EC2Tag -Resource $network.SubnetId -Tag $managementTag
@@ -199,68 +199,68 @@ for($i=0;$i -lt $subnetworks.Length;$i++) {
 }
 
 # Creating the internet gateway
-Write-Host ""
-Write-Host "`t Begin building and configuring the internet gateway."
-Write-Host "`t Creating internet gateway..."
+Write-Output ""
+Write-Output "`t Begin building and configuring the internet gateway."
+Write-Output "`t Creating internet gateway..."
 $igw = New-EC2InternetGateway
 $igw
 
-Write-Host "`t Tagging internet gateway..."
+Write-Output "`t Tagging internet gateway..."
 New-EC2Tag -Resource $igw.InternetGatewayId -Tag $nameTag
 New-EC2Tag -Resource $igw.InternetGatewayId -Tag $serviceTag
 New-EC2Tag -Resource $igw.InternetGatewayId -Tag $managementTag
 
-Write-Host "`t Attaching internet gateway to VPC..."
+Write-Output "`t Attaching internet gateway to VPC..."
 Add-EC2InternetGateway -VpcId $vpc.VpcId -InternetGatewayId $igw.InternetGatewayId
 
 do{
-    Write-Host "`t Verifying IGW-VPC attachment..."
+    Write-Output "`t Verifying IGW-VPC attachment..."
     do{
-        Write-Host "`t Checking IGW-VPC attachment..."
+        Write-Output "`t Checking IGW-VPC attachment..."
         $igw = Get-EC2InternetGateway -InternetGatewayId $igw.InternetGatewayId
         $igw
         Start-Sleep -Seconds 5
     } while($igw.Attachments.Count -ne 1)
 
-    Write-Host "`t Checking IGW-VPC attachment status..."
+    Write-Output "`t Checking IGW-VPC attachment status..."
     $igw = Get-EC2InternetGateway -InternetGatewayId $igw.InternetGatewayId
     $igw
     Start-Sleep -Seconds 5
 } while($igw.Attachments[0].VpcId -ne $vpc.VpcId -and $igw.Attachments[0].State -ne "available")
 
-Write-Host "`t Internet gateway built, configured, and attached to VPC."
-Write-Host ""
+Write-Output "`t Internet gateway built, configured, and attached to VPC."
+Write-Output ""
 
-Write-Host "`t Retrieving route tables..."
+Write-Output "`t Retrieving route tables..."
 $routeTables = Get-EC2RouteTable
 $routeTables
 foreach($routeTable in $routeTables) {
     if($routeTable.VpcId -eq $vpc.VpcId) {
-        Write-Host "`t Tagging route tables..."
+        Write-Output "`t Tagging route tables..."
         New-EC2Tag -Resource $routeTable.RouteTableId -Tag $nameTag
         New-EC2Tag -Resource $routeTable.RouteTableId -Tag $serviceTag
         New-EC2Tag -Resource $routeTable.RouteTableId -Tag $managementTag
 
-        Write-Host "`t Registering subnets to route table..."
+        Write-Output "`t Registering subnets to route table..."
         foreach($network in $networks) {
             Register-EC2RouteTable -RouteTableId $routeTable.RouteTableId -SubnetId $network.SubnetId
         }
 
-        Write-Host "`t Creating default IGW route..."
+        Write-Output "`t Creating default IGW route..."
         New-EC2Route -RouteTableId $routeTable.RouteTableId -DestinationCidrBlock "0.0.0.0/0" -GatewayId $igw.InternetGatewayId
     }
 }
-Write-Host "`t VPC built, configured, and tagged."
-Write-Host ""
+Write-Output "`t VPC built, configured, and tagged."
+Write-Output ""
 
 # Creating security group for load balancer
-Write-Host ""
-Write-Host "`t Begin building and configuring the ELB security group."
-Write-Host "`t Creating load balancer security group..."
+Write-Output ""
+Write-Output "`t Begin building and configuring the ELB security group."
+Write-Output "`t Creating load balancer security group..."
 $sg = New-EC2SecurityGroup -GroupName $serviceFamily -Description $serviceFamily -VpcId $vpc.VpcId
 $sg
 
-Write-Host "`t Defining IP ranges and default egress rules..."
+Write-Output "`t Defining IP ranges and default egress rules..."
 $ipRange = New-Object -TypeName Amazon.EC2.Model.IpRange
 $ipRange.CidrIp = "0.0.0.0/0"
 #$ipRange.Description = $null   # Do not set description or it will not match default egress rule.  
@@ -275,7 +275,7 @@ $outPermission.Ipv4Ranges = $ipRange
 $outPermission.ToPort = 0
 $outPermission
 
-Write-Host "`t Building security group ingress rules..."
+Write-Output "`t Building security group ingress rules..."
 $httpPermission = New-Object -TypeName Amazon.EC2.Model.IpPermission
 $httpPermission.FromPort = 80
 $httpPermission.IpProtocol = "tcp"
@@ -290,64 +290,64 @@ $httpsPermission.Ipv4Ranges = $ipRange
 $httpsPermission.ToPort = 443
 $httpsPermission
 
-Write-Host "`t Applying ingress rules..."
+Write-Output "`t Applying ingress rules..."
 Grant-EC2SecurityGroupIngress -GroupId $sg -IpPermission $httpPermission,$httpsPermission
 
-Write-Host "`t Revoking default egress rules..."
+Write-Output "`t Revoking default egress rules..."
 Revoke-EC2SecurityGroupEgress -GroupId $sg -IpPermission $outPermission
 
-Write-Host "`t Applying new security group egress rules..."
+Write-Output "`t Applying new security group egress rules..."
 Grant-EC2SecurityGroupEgress -GroupId $sg -IpPermission $httpPermission,$httpsPermission
 
-Write-Host "`t Tagging security group..."
+Write-Output "`t Tagging security group..."
 New-EC2Tag -Resource $sg -Tag $nameTag
 New-EC2Tag -Resource $sg -Tag $serviceTag
 New-EC2Tag -Resource $sg -Tag $managementTag
 
-Write-Host "`t Security group created, configured, and tagged."
-Write-Host ""
+Write-Output "`t Security group created, configured, and tagged."
+Write-Output ""
 
 if($loadBalancer) {
     # Creating the load balancer
-    Write-Host ""
-    Write-Host "`t Begin creation and configuration of load balancer."
-    Write-Host "`t Building load balancer subnet list..."
+    Write-Output ""
+    Write-Output "`t Begin creation and configuration of load balancer."
+    Write-Output "`t Building load balancer subnet list..."
     $subnetList = @()
     foreach($network in $networks) {
         $subnetList += $network.SubnetId
     }
     $subnetList
 
-    Write-Host "`t Creating elastic load balancer..."
+    Write-Output "`t Creating elastic load balancer..."
     $elb = New-ELB2LoadBalancer -IpAddressType ipv4 -Name $serviceFamily -Scheme internet-facing -SecurityGroup $sg -Subnet $subnetList -Tag $nameTag,$serviceTag -Type application
     $elb
 
     do{
-        Write-Host "`t Checking ELB state..."
+        Write-Output "`t Checking ELB state..."
         $elb = Get-ELB2LoadBalancer -LoadBalancerArn $elb.LoadBalancerArn
         Start-Sleep -Seconds 5
     } while($elb.State.Code -ne "active")
 
-    Write-Host "`t Tagging ELB..."
+    Write-Output "`t Tagging ELB..."
     Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $nameTag
     Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $serviceTag
     Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $managementTag
 
-    Write-Host "`t ELB created, tagged and active."
-    Write-Host ""
+    Write-Output "`t ELB created, tagged and active."
+    Write-Output ""
 }
 
-Write-Host ""
-Write-Host "`t Service environment created successfully."
+Write-Output ""
+Write-Output "`t Service environment created successfully."
 
 # Begin validation
-Write-Host "`t Validating Environment..."
+Write-Output "`t Validating Environment..."
 $validationPassed = $false
 
 $vpcValidated = $false
 $vpcTest = Get-EC2Vpc -VpcId $vpc.VpcId
 if($vpcTest.State -eq "available") {
-    Write-Host ("`t`t VPC {0} validated" -f $vpc.VpcId)
+    Write-Output ("`t`t VPC {0} validated" -f $vpc.VpcId)
     $vpcValidated = $true
 }
 
@@ -357,7 +357,7 @@ foreach($network in $networks) {
 
     $networksValidated += $false
     if($subnetTest.State -eq "available") {
-        Write-Host ("`t`t subnet {0} validated" -f $network.CidrBlock)
+        Write-Output ("`t`t subnet {0} validated" -f $network.CidrBlock)
         $networksValidated[$networksValidated.Count-1] = $true
     }
 }
@@ -365,14 +365,14 @@ foreach($network in $networks) {
 $igwValidated = $false
 $igwTest = Get-EC2InternetGateway -InternetGatewayId $igw.InternetGatewayId
 if($igwTest.Attachments[0].State -eq "available") {
-    Write-Host ("`t`t IGW {0} validated" -f $igw.InternetGatewayId)
+    Write-Output ("`t`t IGW {0} validated" -f $igw.InternetGatewayId)
     $igwValidated = $true
 }
 
 $sgValidated = $false
 $sgTest = Get-EC2SecurityGroup -GroupId $sg
 if($sgTest.VpcId -eq $vpc.VpcId) {
-    Write-Host ("`t`t SG {0} validated" -f $sg)
+    Write-Output ("`t`t SG {0} validated" -f $sg)
     $sgValidated = $true
 }
 
@@ -380,7 +380,7 @@ if($loadBalancer) {
     $elbValidated = $false
     $elbTest = Get-ELB2LoadBalancer -LoadBalancerArn $elb.LoadBalancerArn
     if($elbTest.State[0].Code -eq "active") {
-        Write-Host ("`t`t ELB {0} validated" -f $elb.LoadBalancerName)
+        Write-Output ("`t`t ELB {0} validated" -f $elb.LoadBalancerName)
         $elbValidated = $true
     }
 } else {
@@ -392,11 +392,10 @@ if($vpcValidated -and (($networksValidated | Unique).Count -eq 1 -and $networksV
 }
 
 if($validationPassed) {
-    Write-Host "`t Environment successfully validated"
-    Write-Host "success"
+    Write-Output "`t Environment successfully validated"
 } else {
-    Write-Host "`t Validation failed, review logs."
-    Write-Host "failure"
+    Write-Output "`t Validation failed, review logs."
 }
 
+$validationPassed
 Stop-Transcript
