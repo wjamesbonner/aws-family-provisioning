@@ -112,6 +112,7 @@ if ($help) {
 
 if($subnetworks.Length -ne $zones.Length) {
     Write-Output "`t The number of subnetworks must match the number of zones"
+
     return $false
 }
 
@@ -166,6 +167,7 @@ $vpcTags = Get-EC2Tag -Filter $filters
 
 if($vpcTags -ne $null) {
     Write-Output "`t Service already exists - aborting!"
+    Stop-Transcript
     return $false
 }
 
