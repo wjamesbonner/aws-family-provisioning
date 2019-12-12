@@ -24,7 +24,7 @@ param(
     [string] $profileName  = "",
 
     [Alias("l")]
-    [switch] $loadBalancer = $false,
+    [bool] $loadBalancer = $false,
 
     [Alias("h")]
     [switch] $help = $false
