@@ -20,19 +20,25 @@ param(
     [Alias("m")]
     [string] $managementMode  = "automatic",
 
+    [Alias("e")]
+    [string] $environment  = "production",
+
     [Alias("p")]
     [string] $profileName  = "",
 
     [Alias("l")]
     [bool] $loadBalancer = $false,
 
+    [Alias("c")]
+    [bool] $containerRepository = $false,
+
     [Alias("h")]
     [switch] $help = $false
 )
 
 if ($help) {
-    Write-Output ("`t aws_create_vpc.ps1 will configure an existing ECS cluster tagged as part of the service family to run a new instance of the service, or create a new cluster if none exist already")
-    Write-Output ("`t Prerequisites: Powershell")
+    Write-Output ("`t aws_provision_service_family.ps1 will create and configure a VPC environment for a new service, and tag all resources for simple management.")
+    Write-Output ("`t Prerequisites: Powershell, AWS CLI, AWS.Tools for Powershell")
     Write-Output ("`t ")
     Write-Output ("`t Parameters:")
     Write-Output ("`t ")
@@ -40,79 +46,94 @@ if ($help) {
     Write-Output ("`t     The name of the service family.")
     Write-Output ("`t     Default: arn:aws:elasticloadbalancing:us-west-2:8675309:loadbalancer/app/lb-name/eff143")
     Write-Output ("`t     Alias: f")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -serviceFamily my-awesome-service")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -s my-awesome-service")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -serviceFamily my-awesome-service")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -s my-awesome-service")
 	
     Write-Output ("`t ")
     Write-Output ("`t serviceFamilyTagName")
     Write-Output ("`t     The name of the tag that stores the service family name")
     Write-Output ("`t     Default: {0}" -f $serviceFamilyTagName)
     Write-Output ("`t     Alias: n")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -serviceFamilyTagName service-family")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -n service-family")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -serviceFamilyTagName service-family")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -n service-family")
 
     Write-Output ("`t ")
     Write-Output ("`t cidrBlock")
     Write-Output ("`t     The CIDR block to use for this VPC")
     Write-Output ("`t     Default: {0}" -f $cidrBlock)
     Write-Output ("`t     Alias: c")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -cidrBlock {0}" -f $cidrBlock)
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -c {0}" -f $cidrBlock)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -cidrBlock {0}" -f $cidrBlock)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -c {0}" -f $cidrBlock)
 
     Write-Output ("`t ")
     Write-Output ("`t instanceTenancy")
     Write-Output ("`t     The default tenancy for this VPC, i.e. dedicated hosting versus shared hosting.")
     Write-Output ("`t     Default: {0}" -f $instanceTenancy)
     Write-Output ("`t     Alias: t")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -instanceTenancy {0}" -f $instanceTenancy)
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -t {0}" -f $instanceTenancy)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -instanceTenancy {0}" -f $instanceTenancy)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -t {0}" -f $instanceTenancy)
 
     Write-Output ("`t ")
     Write-Output ("`t subnetworks")
     Write-Output ("`t     Array of subnetworks to define for the VPC.  Must positionally match the zones parameter.")
     Write-Output ("`t     Default: {0}" -f $subnetworks)
     Write-Output ("`t     Alias: s")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -subnetworks {0}" -f $subnetworks)
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -s {0}" -f $subnetworks)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -subnetworks {0}" -f $subnetworks)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -s {0}" -f $subnetworks)
 
     Write-Output ("`t ")
     Write-Output ("`t zones")
     Write-Output ("`t     The zones to to place the subnets in; corresponds positionally to the subnetworks parameter")
     Write-Output ("`t     Default: {0}" -f $zones)
     Write-Output ("`t     Alias: z")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -zones {0}" -f $zones)
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -z {0}" -f $zones)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -zones {0}" -f $zones)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -z {0}" -f $zones)
+
+    Write-Output ("`t ")
+    Write-Output ("`t environment")
+    Write-Output ("`t     The environment of the service, e.g., production or staging.")
+    Write-Output ("`t     Default: {0}" -f $environment)
+    Write-Output ("`t     Alias: l")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -environment {0}" -f "environment")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -3 {0}" -f "environment")
 
     Write-Output ("`t ")
     Write-Output ("`t profileName")
     Write-Output ("`t     The name of the AWS configure credential profile to use, leave empty for default.")
     Write-Output ("`t     Default: {0}" -f $profileName)
-    Write-Output ("`t     Alias: l")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -profileName {0}" -f "myProfile")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -l {0}" -f "myProfile")
+    Write-Output ("`t     Alias: p")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -profileName {0}" -f "myProfile")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -p {0}" -f "myProfile")
 
     Write-Output ("`t ")
     Write-Output ("`t loadBalancer")
-    Write-Output ("`t     Indicates whether to provisiona load balancer for the environment.")
+    Write-Output ("`t     Indicates whether to provision a load balancer for the environment.")
     Write-Output ("`t     Default: {0}" -f $loadBalancer)
     Write-Output ("`t     Alias: l")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -loadBalancer {0}" -f $loadBalancer)
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -l {0}" -f $loadBalancer)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -loadBalancer {0}" -f $loadBalancer)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -l {0}" -f $loadBalancer)
+
+    Write-Output ("`t ")
+    Write-Output ("`t containerRepository")
+    Write-Output ("`t     Indicates whether to provision a container repository for the environment.")
+    Write-Output ("`t     Default: {0}" -f $containerRepository)
+    Write-Output ("`t     Alias: l")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -containerRepository {0}" -f $containerRepository)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -c {0}" -f $containerRepository)
 
     Write-Output ("`t ")
     Write-Output ("`t managementMode")
     Write-Output ("`t     The management mode of the service, i.e. automatic or manual")
     Write-Output ("`t     Default: {0}" -f $managementMode)
     Write-Output ("`t     Alias: m")
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -managementMode {0}" -f $managementMode)
-    Write-Output ("`t     Example: .\aws_create_vpc.ps1 -m {0}" -f $managementMode)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -managementMode {0}" -f $managementMode)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -m {0}" -f $managementMode)
 
     return $false
 }
 
 if($subnetworks.Length -ne $zones.Length) {
     Write-Output "`t The number of subnetworks must match the number of zones"
-
     return $false
 }
 
@@ -122,6 +143,13 @@ if ($serviceFamily -eq "") {
 }
 $serviceFamily = $serviceFamily.ToLower()
 
+# Prompt for environment if not valid value
+if ($environment -ne "production" -and $environment -ne "staging") {
+	$environment = Read-Host "Enter a valid environment [production or staging]"
+}
+$environment = $environment.ToLower()
+
+# Check if custom aws credential profile is specified
 if($profileName -ne "") {
     try {
         Set-AWSCredential -ProfileName $profileName
@@ -135,7 +163,7 @@ if($profileName -ne "") {
 # navigate to library root
 cd $PSScriptRoot
 
-$transcriptName = ("aws_create_vpc-{0}.transcript" -f [DateTimeOffset]::Now.ToUnixTimeSeconds())
+$transcriptName = ("aws_provision_service_family-{0}.transcript" -f [DateTimeOffset]::Now.ToUnixTimeSeconds())
 Start-Transcript -Path $transcriptName
 
 $serviceFamily
@@ -171,19 +199,7 @@ if($vpcTags -ne $null) {
     return $false
 }
 
-# Creating the virtual private cloud
-Write-Output ""
-Write-Output "`t Begin building and configuring the virtual private cloud."
-Write-Output "`t Creating VPC..."
-$vpc = New-EC2VPC -CidrBlock $cidrBlock -InstanceTenancy $instanceTenancy
-$vpc
-
-do{
-    Write-Output ("`t Checking VPC {0} state..." -f $vpc.VpcId)
-    $vpc = Get-EC2Vpc -VpcId $vpc.VpcId
-    Start-Sleep -Seconds 5
-} while($vpc.State -ne "available")
-
+# Prepare tags for to apply to resources as they are created
 Write-Output "`t Building environment tags..."
 $hash = @{Key="Name"; Value=$serviceFamily}
 $nameTag = [PSCustomObject]$hash
@@ -197,10 +213,28 @@ $hash = @{Key="management-mode"; Value=$managementMode}
 $managementTag = [PSCustomObject]$hash
 $managementTag
 
+$hash = @{Key="environment"; Value=$environment}
+$environmentTag = [PSCustomObject]$hash
+$environmentTag
+
+# Creating the virtual private cloud
+Write-Output ""
+Write-Output "`t Begin building and configuring the virtual private cloud."
+Write-Output "`t Creating VPC..."
+$vpc = New-EC2VPC -CidrBlock $cidrBlock -InstanceTenancy $instanceTenancy
+$vpc
+
+do{
+    Write-Output ("`t Checking VPC {0} state..." -f $vpc.VpcId)
+    $vpc = Get-EC2Vpc -VpcId $vpc.VpcId
+    Start-Sleep -Seconds 5
+} while($vpc.State -ne "available")
+
 Write-Output "`t Tagging VPC..."
 New-EC2Tag -Resource $vpc.VpcId -Tag $nameTag
 New-EC2Tag -Resource $vpc.VpcId -Tag $serviceTag
 New-EC2Tag -Resource $vpc.VpcId -Tag $managementTag
+New-EC2Tag -Resource $vpc.VpcId -Tag $environmentTag
 
 Write-Output "`t Building subnets..."
 $networks = @()
@@ -218,6 +252,7 @@ for($i=0;$i -lt $subnetworks.Length;$i++) {
     New-EC2Tag -Resource $network.SubnetId -Tag $nameTag
     New-EC2Tag -Resource $network.SubnetId -Tag $serviceTag
     New-EC2Tag -Resource $network.SubnetId -Tag $managementTag
+    New-EC2Tag -Resource $network.SubnetId -Tag $environmentTag
     $networks += $network
 }
 
@@ -232,6 +267,7 @@ Write-Output "`t Tagging internet gateway..."
 New-EC2Tag -Resource $igw.InternetGatewayId -Tag $nameTag
 New-EC2Tag -Resource $igw.InternetGatewayId -Tag $serviceTag
 New-EC2Tag -Resource $igw.InternetGatewayId -Tag $managementTag
+New-EC2Tag -Resource $igw.InternetGatewayId -Tag $environmentTag
 
 Write-Output "`t Attaching internet gateway to VPC..."
 Add-EC2InternetGateway -VpcId $vpc.VpcId -InternetGatewayId $igw.InternetGatewayId
@@ -263,6 +299,7 @@ foreach($routeTable in $routeTables) {
         New-EC2Tag -Resource $routeTable.RouteTableId -Tag $nameTag
         New-EC2Tag -Resource $routeTable.RouteTableId -Tag $serviceTag
         New-EC2Tag -Resource $routeTable.RouteTableId -Tag $managementTag
+        New-EC2Tag -Resource $routeTable.RouteTableId -Tag $environmentTag
 
         Write-Output "`t Registering subnets to route table..."
         foreach($network in $networks) {
@@ -326,6 +363,7 @@ Write-Output "`t Tagging security group..."
 New-EC2Tag -Resource $sg -Tag $nameTag
 New-EC2Tag -Resource $sg -Tag $serviceTag
 New-EC2Tag -Resource $sg -Tag $managementTag
+New-EC2Tag -Resource $sg -Tag $environmentTag
 
 Write-Output "`t Security group created, configured, and tagged."
 Write-Output ""
@@ -355,8 +393,39 @@ if($loadBalancer) {
     Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $nameTag
     Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $serviceTag
     Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $managementTag
+    Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $environmentTag
 
     Write-Output "`t ELB created, tagged and active."
+    Write-Output ""
+}
+
+if($containerRepository) {
+    # Creating the container repository
+    Write-Output ""
+    Write-Output "`t Begin creation and configuration of elastic container repository."
+    
+    Write-Output "`t Creating elastic container repository..."
+    $containerName = ("{0}/{1}" -f $environment,$serviceFamily)
+    $ecr = New-ECRRepository -RepositoryName $containerName -Tag $nameTag,$serviceTag,$managementTag,$environmentTag
+    $ecr
+
+    do{
+        Write-Output "`t Checking ECR state..."
+        $ecrExists = $false
+
+        try {
+            $ecr = Get-ECRRepository -RepositoryName $containerName
+            if($ecr -ne $null) {
+                $ecrExists = $true
+            }
+        } catch {
+            Write-Output "`t ECR was not found, checking again..."
+        }
+        
+        Start-Sleep -Seconds 5
+    } while($ecrExists -ne $true)
+
+    Write-Output "`t ECR created, tagged and active."
     Write-Output ""
 }
 
@@ -410,7 +479,23 @@ if($loadBalancer) {
     $elbValidated = $true
 }
 
-if($vpcValidated -and (($networksValidated | Unique).Count -eq 1 -and $networksValidated[0] -eq $true) -and $igwValidated -and $sgValidated -and $elbValidated) {
+if($containerRepository) {
+    $ecrValidated = $false
+
+    try {
+        $ecrTest = Get-ECRRepository -RepositoryName $ecr.RepositoryName
+        if($ecrTest -ne $null) {
+            Write-Output ("`t`t ECR {0} validated" -f $ecr.RepositoryName)
+            $ecrValidated = $true
+        }
+    } catch {
+        #
+    }
+} else {
+    $ecrValidated = $true
+}
+
+if($vpcValidated -and (($networksValidated | Unique).Count -eq 1 -and $networksValidated[0] -eq $true) -and $igwValidated -and $sgValidated -and $elbValidated -and $ecrValidated) {
     $validationPassed = $true
 }
 
