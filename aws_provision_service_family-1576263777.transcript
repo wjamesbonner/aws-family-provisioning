@@ -1,0 +1,131 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20191213110257
+Username: AD\bbonner
+RunAs User: AD\bbonner
+Configuration Name: 
+Machine: NEWTON (Microsoft Windows NT 10.0.18362.0)
+Host Application: C:\Windows\system32\WindowsPowerShell\v1.0\PowerShell_ISE.exe
+Process ID: 17932
+PSVersion: 5.1.18362.145
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.18362.145
+BuildVersion: 10.0.18362.145
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is aws_provision_service_family-1576263777.transcript
+wp-containers
+service-family
+10.1.1.0/24
+default
+10.1.1.0/25
+10.1.1.128/25
+us-west-2a
+us-west-2b
+automatic
+
+	 Searching for conflicting service family VPCs.
+	 Building tag filters and retrieving tags...
+	 Building environment tags...
+
+Key             Value
+---             -----
+Name            wp-containers
+service-family  wp-containers
+management-mode automatic
+environment     production
+
+	 Begin building and configuring the virtual private cloud.
+	 Creating VPC...
+
+	 Checking VPC vpc-095ffcbb654b16498 state...
+	 Tagging VPC...
+	 Building subnets...
+
+	 Checking subnet 10.1.1.0/25 state...
+
+	 Tagging subnet...
+
+	 Checking subnet 10.1.1.128/25 state...
+
+	 Tagging subnet...
+
+	 Begin building and configuring the internet gateway.
+	 Creating internet gateway...
+
+	 Tagging internet gateway...
+	 Attaching internet gateway to VPC...
+	 Verifying IGW-VPC attachment...
+	 Checking IGW-VPC attachment...
+
+	 Checking IGW-VPC attachment status...
+
+	 Internet gateway built, configured, and attached to VPC.
+
+	 Retrieving route tables...
+
+
+
+	 Tagging route tables...
+	 Registering subnets to route table...
+rtbassoc-0341d6a9c290ada12
+rtbassoc-0019dc2690b43aba5
+	 Creating default IGW route...
+True
+	 VPC built, configured, and tagged.
+
+
+	 Begin building and configuring the ELB security group.
+	 Creating load balancer security group...
+sg-0cee51e310b19cd97
+	 Defining IP ranges and default egress rules...
+
+
+	 Building security group ingress rules...
+
+
+	 Applying ingress rules...
+	 Revoking default egress rules...
+	 Applying new security group egress rules...
+	 Tagging security group...
+	 Security group created, configured, and tagged.
+
+
+	 Begin creation and configuration of EC2 SSH Key Pair.
+	 Checking for conflicting key...
+PS>TerminatingError(Get-EC2KeyPair): "The key pair 'wp-containers' does not exist"
+Get-EC2KeyPair : The key pair 'wp-containers' does not exist
+At C:\Users\bbonner.AD\source\repos\aws-service-provisioning\aws_provision_service_family.ps1:397 char:15
++     $ec2Key = Get-EC2KeyPair -KeyName $serviceFamily
++               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (Amazon.PowerShe...C2KeyPairCmdlet:GetEC2KeyPairCmdlet) 
+[Get-EC2KeyPair], InvalidOperationException
+    + FullyQualifiedErrorId : Amazon.EC2.AmazonEC2Exception,Amazon.PowerShell.Cmdlets.EC2.GetEC2KeyPairCmdlet
+Get-EC2KeyPair : The key pair 'wp-containers' does not exist
+At C:\Users\bbonner.AD\source\repos\aws-service-provisioning\aws_provision_service_family.ps1:397 char:15
++     $ec2Key = Get-EC2KeyPair -KeyName $serviceFamily
++               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (Amazon.PowerShe...C2KeyPairCmdlet:GetEC2KeyPairCmdlet) [Get-EC2KeyPair], InvalidOperationException
+    + FullyQualifiedErrorId : Amazon.EC2.AmazonEC2Exception,Amazon.PowerShell.Cmdlets.EC2.GetEC2KeyPairCmdlet
+
+	 EC2 Key created.
+	 EC2 Key stage complete,
+
+
+	 Service environment created successfully.
+	 Validating Environment...
+		 VPC vpc-095ffcbb654b16498 validated
+		 subnet 10.1.1.0/25 validated
+		 subnet 10.1.1.128/25 validated
+		 IGW igw-052450c564b912035 validated
+		 SG sg-0cee51e310b19cd97 validated
+		 EC2 Key wp-containers validated
+True
+	 Environment successfully validated
+**********************
+Windows PowerShell transcript end
+End time: 20191213110331
+**********************

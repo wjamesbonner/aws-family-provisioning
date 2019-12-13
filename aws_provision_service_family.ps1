@@ -26,11 +26,14 @@ param(
     [Alias("p")]
     [string] $profileName  = "",
 
-    [Alias("l")]
+    [Alias("elb")]
     [bool] $loadBalancer = $false,
 
-    [Alias("r")]
+    [Alias("ecr")]
     [bool] $containerRepository = $false,
+
+    [Alias("ecs")]
+    [bool] $containerCluster = $true,
 
     [Alias("h")]
     [switch] $help = $false
@@ -109,17 +112,25 @@ if ($help) {
     Write-Output ("`t loadBalancer")
     Write-Output ("`t     Indicates whether to provision a load balancer for the environment.")
     Write-Output ("`t     Default: {0}" -f $loadBalancer)
-    Write-Output ("`t     Alias: l")
+    Write-Output ("`t     Alias: elb")
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -loadBalancer {0}" -f $loadBalancer)
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -l {0}" -f $loadBalancer)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -elb {0}" -f $loadBalancer)
 
     Write-Output ("`t ")
     Write-Output ("`t containerRepository")
     Write-Output ("`t     Indicates whether to provision a container repository for the environment.")
     Write-Output ("`t     Default: {0}" -f $containerRepository)
-    Write-Output ("`t     Alias: r")
+    Write-Output ("`t     Alias: ecr")
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -containerRepository {0}" -f $containerRepository)
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -r {0}" -f $containerRepository)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -ecr {0}" -f $containerRepository)
+
+    Write-Output ("`t ")
+    Write-Output ("`t containerCluster")
+    Write-Output ("`t     Indicates whether to provision a container repository for the environment.")
+    Write-Output ("`t     Default: {0}" -f $containerRepository)
+    Write-Output ("`t     Alias: ecr")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -containerRepository {0}" -f $containerCluster)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -ecs {0}" -f $containerCluster)
 
     Write-Output ("`t ")
     Write-Output ("`t managementMode")
@@ -368,6 +379,42 @@ New-EC2Tag -Resource $sg -Tag $environmentTag
 Write-Output "`t Security group created, configured, and tagged."
 Write-Output ""
 
+if($containerCluster) {
+    # Creating EC2 Key Pair
+    Write-Output ""
+    Write-Output "`t Begin creation and configuration of EC2 SSH Key Pair."
+    Write-Output "`t Checking for conflicting key..."
+
+    if (Test-Path("{0}-ec2Key.fingerprint" -f $serviceFamily)) {
+        rm ("{0}-ec2Key.fingerprint" -f $serviceFamily)
+    }
+
+    if (Test-Path("{0}-ec2Key.pem" -f $serviceFamily)) {
+        rm ("{0}-ec2Key.pem" -f $serviceFamily)
+    }
+
+    $ec2Key = $null
+    try {
+        $ec2Key = Get-EC2KeyPair -KeyName $serviceFamily
+    } catch {
+        $ec2Key = $null
+    }
+
+    if($ec2Key -eq $null) {
+        $ec2Key = New-EC2KeyPair -KeyName $serviceFamily
+        $ec2Key.KeyFingerprint | Out-File -FilePath ("{0}-ec2Key.fingerprint" -f $serviceFamily)
+        $ec2Key.KeyMaterial | Out-File -FilePath ("{0}-ec2Key.pem" -f $serviceFamily)
+        Write-Output "`t EC2 Key created."
+    } else {
+        Write-Output "`t EC2 key already exists or failed to be created."
+    }
+
+    Write-Output "`t EC2 Key stage complete, "
+    Write-Output ""
+
+
+}
+
 if($loadBalancer) {
     # Creating the load balancer
     Write-Output ""
@@ -468,6 +515,12 @@ if($sgTest.VpcId -eq $vpc.VpcId) {
     $sgValidated = $true
 }
 
+$ec2KeyValidated = $false
+if ((Test-Path("{0}-ec2Key.fingerprint" -f $serviceFamily)) -and (Test-Path("{0}-ec2Key.pem" -f $serviceFamily))) {
+    Write-Output ("`t`t EC2 Key {0} validated" -f $serviceFamily)
+    $ec2KeyValidated = $true
+}
+
 if($loadBalancer) {
     $elbValidated = $false
     $elbTest = Get-ELB2LoadBalancer -LoadBalancerArn $elb.LoadBalancerArn
@@ -495,7 +548,7 @@ if($containerRepository) {
     $ecrValidated = $true
 }
 
-if($vpcValidated -and (($networksValidated | Unique).Count -eq 1 -and $networksValidated[0] -eq $true) -and $igwValidated -and $sgValidated -and $elbValidated -and $ecrValidated) {
+if($vpcValidated -and (($networksValidated | Unique).Count -eq 1 -and $networksValidated[0] -eq $true) -and $igwValidated -and $sgValidated -and $ec2KeyValidated -and $elbValidated -and $ecrValidated) {
     $validationPassed = $true
 }
 
