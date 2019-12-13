@@ -29,7 +29,7 @@ param(
     [Alias("l")]
     [bool] $loadBalancer = $false,
 
-    [Alias("c")]
+    [Alias("r")]
     [bool] $containerRepository = $false,
 
     [Alias("h")]
@@ -117,9 +117,9 @@ if ($help) {
     Write-Output ("`t containerRepository")
     Write-Output ("`t     Indicates whether to provision a container repository for the environment.")
     Write-Output ("`t     Default: {0}" -f $containerRepository)
-    Write-Output ("`t     Alias: l")
+    Write-Output ("`t     Alias: r")
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -containerRepository {0}" -f $containerRepository)
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -c {0}" -f $containerRepository)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -r {0}" -f $containerRepository)
 
     Write-Output ("`t ")
     Write-Output ("`t managementMode")
