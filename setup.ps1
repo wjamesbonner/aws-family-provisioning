@@ -149,6 +149,28 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.ElasticLoadBalancingV2) -or $for
     $changesMade = $true
 }
 
+# Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.AutoScaling) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.AutoScaling -AllowClobber -Force -Confirm
+    } else {
+        Install-Module -Name AWS.Tools.AutoScaling
+    }
+
+    $changesMade = $true
+}
+
+# Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.SimpleSystemsManagement) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.SimpleSystemsManagement -AllowClobber -Force -Confirm
+    } else {
+        Install-Module -Name AWS.Tools.SimpleSystemsManagement
+    }
+
+    $changesMade = $true
+}
+
 if($changesMade) {
     Write-Output "Modules successfully installed and updated."
 }else {

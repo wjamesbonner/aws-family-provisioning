@@ -27,10 +27,13 @@ param(
     [string] $profileName  = "",
 
     [Alias("elb")]
-    [bool] $loadBalancer = $false,
+    [bool] $loadBalancer = $true,
+
+    [Alias("app")]
+    [string] $applicationType = "web",
 
     [Alias("ecr")]
-    [bool] $containerRepository = $false,
+    [bool] $containerRepository = $true,
 
     [Alias("ecs")]
     [bool] $containerCluster = $true,
@@ -379,6 +382,61 @@ New-EC2Tag -Resource $sg -Tag $environmentTag
 Write-Output "`t Security group created, configured, and tagged."
 Write-Output ""
 
+if($loadBalancer) {
+    # Creating the load balancer
+    Write-Output ""
+    Write-Output "`t Begin creation and configuration of load balancer."
+    Write-Output "`t Building load balancer subnet list..."
+    $subnetList = @()
+    foreach($network in $networks) {
+        $subnetList += $network.SubnetId
+    }
+    $subnetList
+
+    Write-Output "`t Creating elastic load balancer..."
+    $elb = New-ELB2LoadBalancer -IpAddressType ipv4 -Name $serviceFamily -Scheme internet-facing -SecurityGroup $sg -Subnet $subnetList -Tag $nameTag,$serviceTag -Type application
+    $elb
+
+    do{
+        Write-Output "`t Checking ELB state..."
+        $elb = Get-ELB2LoadBalancer -LoadBalancerArn $elb.LoadBalancerArn
+        Start-Sleep -Seconds 5
+    } while($elb.State.Code -ne "active")
+
+    Write-Output "`t Tagging ELB..."
+    Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $nameTag
+    Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $serviceTag
+    Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $managementTag
+    Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $environmentTag
+
+    if($containerCluster -and $applicationType -eq "web") {
+        Write-Output "`t Creating web group target..."
+        $elbTargetGroupParams = @{ 
+            'Name'                       = $serviceFamily;
+            'HealthCheckEnabled'         = $true;
+            'HealthCheckIntervalSecond'  = 10;
+            'HealthCheckTimeoutSecond'   = 5;
+            'HealthyThresholdCount'      = 2;
+            'Port'                       = 443;
+            'Protocol'                   = 'HTTPS';
+            'TargetType'                 = 'instance';
+            'UnhealthyThresholdCount'    = 2;
+            'VpcId'                      = $vpc.VpcId;
+        }
+
+        $elbTargetGroup = New-ELB2TargetGroup @elbTargetGroupParams
+
+        Write-Output "`t Tagging ELB target group..."
+        Add-ELB2Tag -ResourceArn  $elbTargetGroup.TargetGroupArn -Tag $nameTag
+        Add-ELB2Tag -ResourceArn  $elbTargetGroup.TargetGroupArn -Tag $serviceTag
+        Add-ELB2Tag -ResourceArn  $elbTargetGroup.TargetGroupArn -Tag $managementTag
+        Add-ELB2Tag -ResourceArn  $elbTargetGroup.TargetGroupArn -Tag $environmentTag
+    }
+
+    Write-Output "`t ELB created, tagged and active."
+    Write-Output ""
+}
+
 if($containerCluster) {
     # Creating EC2 Key Pair
     Write-Output ""
@@ -412,38 +470,58 @@ if($containerCluster) {
     Write-Output "`t EC2 Key stage complete, "
     Write-Output ""
 
+    $blockDeviceMap = New-Object -TypeName Amazon.AutoScaling.Model.BlockDeviceMapping
+    $blockDeviceMap.DeviceName = '/dev/xvdcz'
 
-}
+    $blockDeviceMap.Ebs = New-Object -TypeName Amazon.AutoScaling.Model.Ebs
+    $blockDeviceMap.Ebs.VolumeSize = 22;
+    $blockDeviceMap.Ebs.VolumeType = 'gp2';
+    $blockDeviceMap.Ebs.Encrypted = $true;
+    $blockDeviceMap.Ebs.DeleteOnTermination = $true;
 
-if($loadBalancer) {
-    # Creating the load balancer
-    Write-Output ""
-    Write-Output "`t Begin creation and configuration of load balancer."
-    Write-Output "`t Building load balancer subnet list..."
-    $subnetList = @()
-    foreach($network in $networks) {
-        $subnetList += $network.SubnetId
+    $userData = ('#!/bin/bash
+echo ECS_CLUSTER={0} >> /etc/ecs/ecs.config;
+echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;' -f $serviceFamily)
+    $userData = [System.Text.Encoding]::UTF8.GetBytes($userData)
+    $userData = [System.Convert]::ToBase64String($userData)
+
+    $imageId = (Get-SSMParameter -Name /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2 -region 'us-west-2').Value
+    # need to Validate
+
+    $asLaunchConfigurationParams = @{ 
+        'LaunchConfigurationName'    = ("EC2ContainerService-{0}-EcsInstanceLc-{1}" -f $serviceFamily, [DateTimeOffset]::Now.ToUnixTimeSeconds());
+        'InstanceType'               = 't3a.medium';
+        'ImageId'                    = $imageId;
+        'KeyName'                    = $serviceFamily;
+        'AssociatePublicIpAddress'   = $true;
+        'BlockDeviceMapping'         = $blockDeviceMap;
+        'IamInstanceProfile'         = '';
+        'InstanceMonitoring_Enabled' = $true;
+        'SecurityGroup'              = $sg;
+        'UserData'                   = $userData;
     }
-    $subnetList
+    New-ASLaunchConfiguration @asLaunchConfigurationParams
+    $asLaunchConfiguration = Get-ASLaunchConfiguration -LaunchConfigurationName $asLaunchConfigurationParams.LaunchConfigurationName
 
-    Write-Output "`t Creating elastic load balancer..."
-    $elb = New-ELB2LoadBalancer -IpAddressType ipv4 -Name $serviceFamily -Scheme internet-facing -SecurityGroup $sg -Subnet $subnetList -Tag $nameTag,$serviceTag -Type application
-    $elb
+    $asAutoScalingGroupParams = @{ 
+        'AutoScalingGroupName'             = $serviceFamily;
+        'LaunchConfigurationName'          = $asLaunchConfiguration.LaunchConfigurationName;
+        'MinSize'                          = 2;
+        'MaxSize'                          = 2;
+        'AvailabilityZone'                 = $zones;
+        'DefaultCooldown'                  = 300;
+        'DesiredCapacity'                  = 2;
+        'NewInstancesProtectedFromScaleIn' = $true;
+        'Tag'                              = $nameTag,$serviceTag,$managementTag,$environmentTag;
+        'TargetGroupARNs'                  = $elbTargetGroup.TargetGroupArn;
+    }
+    New-ASAutoScalingGroup @asAutoScalingGroupParams
+    $asAutoScalingGroup = Get-ASAutoScalingGroup -AutoScalingGroupName $asAutoScalingGroupParams.AutoScalingGroupName
 
-    do{
-        Write-Output "`t Checking ELB state..."
-        $elb = Get-ELB2LoadBalancer -LoadBalancerArn $elb.LoadBalancerArn
-        Start-Sleep -Seconds 5
-    } while($elb.State.Code -ne "active")
-
-    Write-Output "`t Tagging ELB..."
-    Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $nameTag
-    Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $serviceTag
-    Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $managementTag
-    Add-ELB2Tag -ResourceArn  $elb.LoadBalancerArn -Tag $environmentTag
-
-    Write-Output "`t ELB created, tagged and active."
-    Write-Output ""
+    $clusterSetting = New-Object -TypeName Amazon.ECS.Model.ClusterSetting
+    $clusterSetting.Name = "containerInsights"
+    $clusterSetting.Value = "enabled"
+    $ecs = New-ECSCluster -ClusterName $serviceFamily -Tag $nameTag,$serviceTag,$managementTag,$environmentTag -Setting $clusterSetting
 }
 
 if($containerRepository) {

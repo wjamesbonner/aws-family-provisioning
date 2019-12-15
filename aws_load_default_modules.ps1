@@ -69,3 +69,21 @@ else {
     Write-Host "Module Import-Module AWS.Tools.ElasticFileSystem has not been installed.  Please run this libraries setup script."
     return;
 }
+
+# Check for necessary module
+if (Get-Module -ListAvailable -Name AWS.Tools.AutoScaling) {
+    Import-Module AWS.Tools.AutoScaling
+} 
+else {
+    Write-Host "Module Import-Module AWS.Tools.AutoScaling has not been installed.  Please run this libraries setup script."
+    return;
+}
+
+# Check for necessary module
+if (Get-Module -ListAvailable -Name AWS.Tools.SimpleSystemsManagement) {
+    Import-Module AWS.Tools.SimpleSystemsManagement
+} 
+else {
+    Write-Host "Module Import-Module AWS.Tools.SimpleSystemsManagement has not been installed.  Please run this libraries setup script."
+    return;
+}
