@@ -20,8 +20,14 @@ param(
     [Alias("m")]
     [string] $managementMode  = "automatic",
 
+    [Alias("mt")]
+    [string] $managementModeTagName  = "management-mode",
+
     [Alias("e")]
     [string] $environment  = "production",
+
+    [Alias("et")]
+    [string] $environmentTagName  = "environment",
 
     [Alias("p")]
     [string] $profileName  = "",
@@ -231,11 +237,11 @@ $hash = @{Key=$serviceFamilyTagName; Value=$serviceFamily}
 $serviceTag = [PSCustomObject]$hash
 $serviceTag
 
-$hash = @{Key="management-mode"; Value=$managementMode}
+$hash = @{Key=$managementModeTagName; Value=$managementMode}
 $managementTag = [PSCustomObject]$hash
 $managementTag
 
-$hash = @{Key="environment"; Value=$environment}
+$hash = @{Key=$environmentTagName; Value=$environment}
 $environmentTag = [PSCustomObject]$hash
 $environmentTag
 
