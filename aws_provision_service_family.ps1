@@ -56,10 +56,10 @@ if ($help) {
     Write-Output ("`t ")
     Write-Output ("`t serviceFamily")
     Write-Output ("`t     The name of the service family.")
-    Write-Output ("`t     Default: arn:aws:elasticloadbalancing:us-west-2:8675309:loadbalancer/app/lb-name/eff143")
+    Write-Output ("`t     Default: {0}" -f $serviceFamily)
     Write-Output ("`t     Alias: s")
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -serviceFamily my-awesome-service")
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -s my-awesome-service")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -serviceFamily {0}" -f $serviceFamily)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -s {0}" -f $serviceFamily)
 	
     Write-Output ("`t ")
     Write-Output ("`t serviceFamilyTagName")
