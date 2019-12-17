@@ -27,16 +27,16 @@ param(
     [string] $profileName  = "",
 
     [Alias("elb")]
-    [bool] $loadBalancer = $true,
+    [bool] $loadBalancer = $false,
 
     [Alias("app")]
     [string] $applicationType = "web",
 
     [Alias("ecr")]
-    [bool] $containerRepository = $true,
+    [bool] $containerRepository = $false,
 
     [Alias("ecs")]
-    [bool] $containerCluster = $true,
+    [bool] $containerCluster = $false,
 
     [Alias("h")]
     [switch] $help = $false
