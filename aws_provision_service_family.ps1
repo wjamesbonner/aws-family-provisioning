@@ -424,8 +424,8 @@ if($loadBalancer) {
             'HealthCheckIntervalSecond'  = 10;
             'HealthCheckTimeoutSecond'   = 5;
             'HealthyThresholdCount'      = 2;
-            'Port'                       = 443;
-            'Protocol'                   = 'HTTPS';
+            'Port'                       = 80;
+            'Protocol'                   = 'HTTP';
             'TargetType'                 = 'instance';
             'UnhealthyThresholdCount'    = 2;
             'VpcId'                      = $vpc.VpcId;
@@ -438,6 +438,35 @@ if($loadBalancer) {
         Add-ELB2Tag -ResourceArn  $elbTargetGroup.TargetGroupArn -Tag $serviceTag
         Add-ELB2Tag -ResourceArn  $elbTargetGroup.TargetGroupArn -Tag $managementTag
         Add-ELB2Tag -ResourceArn  $elbTargetGroup.TargetGroupArn -Tag $environmentTag
+
+        Write-Output "`t Creating http listener..."
+        $listenerTargetGroupTuple = New-Object -TypeName Amazon.ElasticLoadBalancingV2.Model.TargetGroupTuple
+        $listenerTargetGroupTuple.TargetGroupArn = $elbTargetGroup.TargetGroupArn
+        $listenerTargetGroupTuple.Weight = 1
+        
+        $listenerTargetGroupStickiness = New-Object -TypeName Amazon.ElasticLoadBalancingV2.Model.TargetGroupStickinessConfig
+        $listenerTargetGroupStickiness.DurationSeconds = 300
+        $listenerTargetGroupStickiness.Enabled = $false
+
+        $listenerForwardAction = New-Object -TypeName Amazon.ElasticLoadBalancingV2.Model.ForwardActionConfig
+        $listenerForwardAction.TargetGroups = $listenerTargetGroupTuple
+        $listenerForwardAction.TargetGroupStickinessConfig = $listenerTargetGroupStickiness
+
+        $listenerAction = New-Object -TypeName Amazon.ElasticLoadBalancingV2.Model.Action
+        $listenerAction.ForwardConfig = $listenerForwardAction
+        $listenerAction.Order = 1
+        $listenerAction.TargetGroupArn = $elbTargetGroup.TargetGroupArn
+        $listenerAction.Type = "Forward"
+
+        $elbHttpListener = @{
+            'LoadBalancerArn'            = $elb.LoadBalancerArns;
+            'DefaultAction'              = $listenerAction;
+            'Port'                       = 80;
+            'Protocol'                   = 'HTTP';
+        }
+
+        $elbListener = New-ELB2Listener @elbHttpListener
+        $elbListener
     }
 
     Write-Output "`t ELB created, tagged and active."
@@ -487,8 +516,7 @@ if($containerCluster) {
     $blockDeviceMap.Ebs.DeleteOnTermination = $true;
 
     $userData = ('#!/bin/bash
-echo ECS_CLUSTER={0} >> /etc/ecs/ecs.config;
-echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;' -f $serviceFamily)
+echo ECS_CLUSTER={0} >> /etc/ecs/ecs.config;echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;' -f $serviceFamily)
     $userData = [System.Text.Encoding]::UTF8.GetBytes($userData)
     $userData = [System.Convert]::ToBase64String($userData)
 
@@ -498,6 +526,7 @@ echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;' -f $serviceFamily)
 
     if($imageId -eq $null) {
         Write-Output "`t Failed to retrieve valid AMI image."
+        Stop-Transcript
         return $false
     }
 
@@ -512,6 +541,7 @@ echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;' -f $serviceFamily)
 
     if($iamRole -eq $null) {
         Write-Output "`t Failed to create role."
+        Stop-Transcript
         return $false
     }
 
