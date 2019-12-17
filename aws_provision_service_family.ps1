@@ -1,8 +1,8 @@
 param(
-    [Alias("f")]
+    [Alias("s")]
     [string] $serviceFamily = "",
 
-    [Alias("n")]
+    [Alias("st")]
     [string] $serviceFamilyTagName = "service-family",
 
     [Alias("c")]
@@ -11,8 +11,8 @@ param(
     [Alias("t")]
     [string] $instanceTenancy   = "default",
 
-    [Alias("s")]
-    [string[]] $subnetworks  = @("10.1.1.0/25", "10.1.1.128/25"),
+    [Alias("n")]
+    [string[]] $networks  = @("10.1.1.0/25", "10.1.1.128/25"),
 
     [Alias("z")]
     [string[]] $zones  = @("us-west-2a", "us-west-2b"),
@@ -57,7 +57,7 @@ if ($help) {
     Write-Output ("`t serviceFamily")
     Write-Output ("`t     The name of the service family.")
     Write-Output ("`t     Default: arn:aws:elasticloadbalancing:us-west-2:8675309:loadbalancer/app/lb-name/eff143")
-    Write-Output ("`t     Alias: f")
+    Write-Output ("`t     Alias: s")
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -serviceFamily my-awesome-service")
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -s my-awesome-service")
 	
@@ -65,9 +65,9 @@ if ($help) {
     Write-Output ("`t serviceFamilyTagName")
     Write-Output ("`t     The name of the tag that stores the service family name")
     Write-Output ("`t     Default: {0}" -f $serviceFamilyTagName)
-    Write-Output ("`t     Alias: n")
+    Write-Output ("`t     Alias: st")
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -serviceFamilyTagName service-family")
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -n service-family")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -st service-family")
 
     Write-Output ("`t ")
     Write-Output ("`t cidrBlock")
@@ -86,12 +86,12 @@ if ($help) {
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -t {0}" -f $instanceTenancy)
 
     Write-Output ("`t ")
-    Write-Output ("`t subnetworks")
-    Write-Output ("`t     Array of subnetworks to define for the VPC.  Must positionally match the zones parameter.")
-    Write-Output ("`t     Default: {0}" -f $subnetworks)
-    Write-Output ("`t     Alias: s")
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -subnetworks {0}" -f $subnetworks)
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -s {0}" -f $subnetworks)
+    Write-Output ("`t networks")
+    Write-Output ("`t     Array of networks to define in the VPC CIDR block.  Must positionally match the zones parameter.")
+    Write-Output ("`t     Default: {0}" -f $networks)
+    Write-Output ("`t     Alias: n")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -networks {0}" -f $networks)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -n {0}" -f $networks)
 
     Write-Output ("`t ")
     Write-Output ("`t zones")
@@ -105,9 +105,17 @@ if ($help) {
     Write-Output ("`t environment")
     Write-Output ("`t     The environment of the service, e.g., production or staging.")
     Write-Output ("`t     Default: {0}" -f $environment)
-    Write-Output ("`t     Alias: l")
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -environment {0}" -f "environment")
-    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -3 {0}" -f "environment")
+    Write-Output ("`t     Alias: e")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -environment {0}" -f $environment)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -e {0}" -f $environment)
+
+    Write-Output ("`t ")
+    Write-Output ("`t environmentTagName")
+    Write-Output ("`t     The name of the tag that stores the environment")
+    Write-Output ("`t     Default: {0}" -f $environmentTagName)
+    Write-Output ("`t     Alias: et")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -environmentTagName {0}" -f $environmentTagName)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -et {0}" -f $environmentTagName)
 
     Write-Output ("`t ")
     Write-Output ("`t profileName")
@@ -157,10 +165,58 @@ if ($help) {
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -managementMode {0}" -f $managementMode)
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -m {0}" -f $managementMode)
 
+    Write-Output ("`t ")
+    Write-Output ("`t managementModeTagName")
+    Write-Output ("`t     The name of the tag that stores the management mode tag name")
+    Write-Output ("`t     Default: {0}" -f $managementModeTagName)
+    Write-Output ("`t     Alias: mt")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -managementModeTagName {0}" -f $managementModeTagName)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -mt {0}" -f $managementModeTagName)
+
+    Write-Output ("`t ")
+    Write-Output ("`t profileName")
+    Write-Output ("`t     The name of AWS configure profile to use for account access")
+    Write-Output ("`t     Default: {0}" -f $profileName)
+    Write-Output ("`t     Alias: p")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -profileName {0}" -f $profileName)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -p {0}" -f $profileName)
+
+    Write-Output ("`t ")
+    Write-Output ("`t loadBalancer")
+    Write-Output ("`t     Indicates whether to build a generic load balancer for the service environment")
+    Write-Output ("`t     Default: {0}" -f $loadBalancer)
+    Write-Output ("`t     Alias: elb")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -loadBalancer {0}" -f $loadBalancer)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -elb {0}" -f $loadBalancer)
+
+    Write-Output ("`t ")
+    Write-Output ("`t containerRepository")
+    Write-Output ("`t     Indicates whether to build a generic container repository for the service environment")
+    Write-Output ("`t     Default: {0}" -f $containerRepository)
+    Write-Output ("`t     Alias: ecr")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -loadBalancer {0}" -f $containerRepository)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -elb {0}" -f $containerRepository)
+
+    Write-Output ("`t ")
+    Write-Output ("`t containerCluster")
+    Write-Output ("`t     Indicates whether to build a generic container cluster for the service environment, with ASG, LC, capacity plan")
+    Write-Output ("`t     Default: {0}" -f $containerCluster)
+    Write-Output ("`t     Alias: ecs")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -loadBalancer {0}" -f $containerCluster)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -elb {0}" -f $containerCluster)
+
+    Write-Output ("`t ")
+    Write-Output ("`t applicationType")
+    Write-Output ("`t     Makes minor customizations for supported application types.  Supported type(s) is: web")
+    Write-Output ("`t     Default: {0}" -f $applicationType)
+    Write-Output ("`t     Alias: app")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -applicationType {0}" -f $applicationType)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -app {0}" -f $applicationType)
+
     return $false
 }
 
-if($subnetworks.Length -ne $zones.Length) {
+if($networks.Length -ne $zones.Length) {
     Write-Output "`t The number of subnetworks must match the number of zones"
     return $false
 }
@@ -198,7 +254,7 @@ $serviceFamily
 $serviceFamilyTagName
 $cidrBlock
 $instanceTenancy
-$subnetworks
+$networks
 $zones
 $managementMode
 
@@ -265,27 +321,27 @@ New-EC2Tag -Resource $vpc.VpcId -Tag $managementTag
 New-EC2Tag -Resource $vpc.VpcId -Tag $environmentTag
 
 Write-Output "`t Building subnets..."
-$networks = @()
-for($i=0;$i -lt $subnetworks.Length;$i++) {
-    $network = New-EC2Subnet -VpcId $vpc.VpcId -CidrBlock $subnetworks[$i] -AvailabilityZone $zones[$i]
-    $network
+$subnets = @()
+for($i=0;$i -lt $networks.Length;$i++) {
+    $subnet = New-EC2Subnet -VpcId $vpc.VpcId -CidrBlock $networks[$i] -AvailabilityZone $zones[$i]
+    $subnet
     do{
-        Write-Output ("`t Checking subnet {0} state..." -f $network.CidrBlock)
-        $network = Get-EC2Subnet -SubnetId $network.SubnetId
-        $network
+        Write-Output ("`t Checking subnet {0} state..." -f $subnet.CidrBlock)
+        $subnet = Get-EC2Subnet -SubnetId $subnet.SubnetId
+        $subnet
         Start-Sleep -Seconds 5
-    } while($network.State -ne "available")
+    } while($subnet.State -ne "available")
 
     Write-Output "`t Tagging subnet..."
-    New-EC2Tag -Resource $network.SubnetId -Tag $nameTag
-    New-EC2Tag -Resource $network.SubnetId -Tag $serviceTag
-    New-EC2Tag -Resource $network.SubnetId -Tag $managementTag
-    New-EC2Tag -Resource $network.SubnetId -Tag $environmentTag
-    $networks += $network
+    New-EC2Tag -Resource $subnet.SubnetId -Tag $nameTag
+    New-EC2Tag -Resource $subnet.SubnetId -Tag $serviceTag
+    New-EC2Tag -Resource $subnet.SubnetId -Tag $managementTag
+    New-EC2Tag -Resource $subnet.SubnetId -Tag $environmentTag
+    $subnets += $subnet
 }
 
 # For use in subsequent steps
-$subnetList = ($networks | Select-Object -Expand SubnetId)
+$subnetList = ($subnets | Select-Object -Expand SubnetId)
 
 # Creating the internet gateway
 Write-Output ""
@@ -333,8 +389,8 @@ foreach($routeTable in $routeTables) {
         New-EC2Tag -Resource $routeTable.RouteTableId -Tag $environmentTag
 
         Write-Output "`t Registering subnets to route table..."
-        foreach($network in $networks) {
-            Register-EC2RouteTable -RouteTableId $routeTable.RouteTableId -SubnetId $network.SubnetId
+        foreach($subnet in $subnets) {
+            Register-EC2RouteTable -RouteTableId $routeTable.RouteTableId -SubnetId $subnet.SubnetId
         }
 
         Write-Output "`t Creating default IGW route..."
@@ -699,14 +755,14 @@ if($vpcTest.State -eq "available") {
     $vpcValidated = $true
 }
 
-$networksValidated = @()
-foreach($network in $networks) {
-    $subnetTest = Get-EC2Subnet -SubnetId $network.SubnetId
+$subnetsValidated = @()
+foreach($subnet in $subnets) {
+    $subnetTest = Get-EC2Subnet -SubnetId $subnet.SubnetId
 
-    $networksValidated += $false
+    $subnetsValidated += $false
     if($subnetTest.State -eq "available") {
-        Write-Output ("`t`t subnet {0} validated" -f $network.CidrBlock)
-        $networksValidated[$networksValidated.Count-1] = $true
+        Write-Output ("`t`t subnet {0} validated" -f $subnet.CidrBlock)
+        $subnetsValidated[$subnetsValidated.Count-1] = $true
     }
 }
 
@@ -757,7 +813,7 @@ if($containerRepository) {
     $ecrValidated = $true
 }
 
-if($vpcValidated -and (($networksValidated | Unique).Count -eq 1 -and $networksValidated[0] -eq $true) -and $igwValidated -and $sgValidated -and $ec2KeyValidated -and $elbValidated -and $ecrValidated) {
+if($vpcValidated -and (($subnetsValidated | Unique).Count -eq 1 -and $subnetsValidated[0] -eq $true) -and $igwValidated -and $sgValidated -and $ec2KeyValidated -and $elbValidated -and $ecrValidated) {
     $validationPassed = $true
 }
 
