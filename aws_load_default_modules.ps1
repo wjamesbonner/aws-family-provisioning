@@ -87,3 +87,12 @@ else {
     Write-Host "Module Import-Module AWS.Tools.SimpleSystemsManagement has not been installed.  Please run this libraries setup script."
     return;
 }
+
+# Check for necessary module
+if (Get-Module -ListAvailable -Name AWS.Tools.IdentityManagement) {
+    Import-Module AWS.Tools.IdentityManagement
+} 
+else {
+    Write-Host "Module Import-Module AWS.Tools.IdentityManagement has not been installed.  Please run this libraries setup script."
+    return;
+}

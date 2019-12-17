@@ -171,6 +171,17 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.SimpleSystemsManagement) -or $fo
     $changesMade = $true
 }
 
+# Check for modules required by this library
+if (!(Get-Module -ListAvailable -Name AWS.Tools.IdentityManagement) -or $force) {
+    if($force) {
+        Install-Module -Name AWS.Tools.IdentityManagement -AllowClobber -Force -Confirm
+    } else {
+        Install-Module -Name AWS.Tools.IdentityManagement
+    }
+
+    $changesMade = $true
+}
+
 if($changesMade) {
     Write-Output "Modules successfully installed and updated."
 }else {

@@ -120,6 +120,14 @@ if ($help) {
     Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -elb {0}" -f $loadBalancer)
 
     Write-Output ("`t ")
+    Write-Output ("`t application")
+    Write-Output ("`t     Indicates the type of application used by the service to tailor the environment.")
+    Write-Output ("`t     Default: {0}" -f $application)
+    Write-Output ("`t     Alias: app")
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -application {0}" -f $application)
+    Write-Output ("`t     Example: .\aws_provision_service_family.ps1 -app {0}" -f $application)
+
+    Write-Output ("`t ")
     Write-Output ("`t containerRepository")
     Write-Output ("`t     Indicates whether to provision a container repository for the environment.")
     Write-Output ("`t     Default: {0}" -f $containerRepository)
@@ -270,6 +278,9 @@ for($i=0;$i -lt $subnetworks.Length;$i++) {
     $networks += $network
 }
 
+# For use in subsequent steps
+$subnetList = ($networks | Select-Object -Expand SubnetId)
+
 # Creating the internet gateway
 Write-Output ""
 Write-Output "`t Begin building and configuring the internet gateway."
@@ -342,13 +353,6 @@ $ipRange.CidrIp = "0.0.0.0/0"
                                 # https://stackoverflow.com/questions/28697349/how-do-i-assign-a-null-value-to-a-variable-in-powershell
 $ipRange
 
-$outPermission = New-Object -TypeName Amazon.EC2.Model.IpPermission
-$outPermission.FromPort = 0
-$outPermission.IpProtocol = "-1"
-$outPermission.Ipv4Ranges = $ipRange
-$outPermission.ToPort = 0
-$outPermission
-
 Write-Output "`t Building security group ingress rules..."
 $httpPermission = New-Object -TypeName Amazon.EC2.Model.IpPermission
 $httpPermission.FromPort = 80
@@ -367,8 +371,18 @@ $httpsPermission
 Write-Output "`t Applying ingress rules..."
 Grant-EC2SecurityGroupIngress -GroupId $sg -IpPermission $httpPermission,$httpsPermission
 
-Write-Output "`t Revoking default egress rules..."
-Revoke-EC2SecurityGroupEgress -GroupId $sg -IpPermission $outPermission
+# If a container cluster is built, we must leave outbound egress to allow for EC2 instances to register with global ECS service broker
+if($containerCluster -eq $false) {
+    Write-Output "`t Revoking default egress rules..."
+    $outPermission = New-Object -TypeName Amazon.EC2.Model.IpPermission
+    $outPermission.FromPort = 0
+    $outPermission.IpProtocol = "-1"
+    $outPermission.Ipv4Ranges = $ipRange
+    $outPermission.ToPort = 0
+    $outPermission
+
+    Revoke-EC2SecurityGroupEgress -GroupId $sg -IpPermission $outPermission
+}
 
 Write-Output "`t Applying new security group egress rules..."
 Grant-EC2SecurityGroupEgress -GroupId $sg -IpPermission $httpPermission,$httpsPermission
@@ -386,13 +400,6 @@ if($loadBalancer) {
     # Creating the load balancer
     Write-Output ""
     Write-Output "`t Begin creation and configuration of load balancer."
-    Write-Output "`t Building load balancer subnet list..."
-    $subnetList = @()
-    foreach($network in $networks) {
-        $subnetList += $network.SubnetId
-    }
-    $subnetList
-
     Write-Output "`t Creating elastic load balancer..."
     $elb = New-ELB2LoadBalancer -IpAddressType ipv4 -Name $serviceFamily -Scheme internet-facing -SecurityGroup $sg -Subnet $subnetList -Tag $nameTag,$serviceTag -Type application
     $elb
@@ -485,8 +492,47 @@ echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;' -f $serviceFamily)
     $userData = [System.Text.Encoding]::UTF8.GetBytes($userData)
     $userData = [System.Convert]::ToBase64String($userData)
 
-    $imageId = (Get-SSMParameter -Name /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2 -region 'us-west-2').Value
-    # need to Validate
+    #$imageId = (Get-SSMParameter -Name /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2 -region 'us-west-2').Value
+    $imageId = ((Get-SSMParameter -Name /aws/service/ecs/optimized-ami/amazon-linux-2/recommended -region 'us-west-2').Value | ConvertFrom-Json).image_id
+    $imageId
+
+    if($imageId -eq $null) {
+        Write-Output "`t Failed to retrieve valid AMI image."
+        return $false
+    }
+
+    $iamRoleParams = @{ 
+        'Path'                       = '/';
+        'RoleName'                   = ("{0}-EcsCluster-{1}" -f $serviceFamily, [DateTimeOffset]::Now.ToUnixTimeSeconds());
+        'AssumeRolePolicyDocument'   = '{"Version":"2008-10-17","Statement":[{"Sid":"","Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}';
+        'Tag'                        = $nameTag,$serviceTag,$managementTag,$environmentTag;
+    }
+    $iamRole = New-IAMRole @iamRoleParams
+    $iamRole
+
+    if($iamRole -eq $null) {
+        Write-Output "`t Failed to create role."
+        return $false
+    }
+
+    $iamRolePolicyParams = @{ 
+        'RoleName'                   = $iamRole.RoleName;
+        'PolicyArn'                  = 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role';
+    }
+    $iamRolePolicy = Register-IAMRolePolicy @iamRolePolicyParams
+    $iamRolePolicy
+
+    $iamInstanceProfileParams = @{ 
+        'InstanceProfileName'        = $iamRole.RoleName;
+        'Path'                       = '/';
+    }
+    $iamInstanceProfile = New-IAMInstanceProfile @iamInstanceProfileParams
+    $iamInstanceProfile = Add-IAMRoleToInstanceProfile -InstanceProfileName $iamRole.RoleName -RoleName $iamRole.RoleName
+    $iamInstanceProfile = Get-IAMInstanceProfile -InstanceProfileName $iamRole.RoleName
+    $iamInstanceProfile
+
+    # Wait for Profile ARN to propogate in AWS backend
+    Start-Sleep -Seconds 30
 
     $asLaunchConfigurationParams = @{ 
         'LaunchConfigurationName'    = ("EC2ContainerService-{0}-EcsInstanceLc-{1}" -f $serviceFamily, [DateTimeOffset]::Now.ToUnixTimeSeconds());
@@ -495,7 +541,7 @@ echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;' -f $serviceFamily)
         'KeyName'                    = $serviceFamily;
         'AssociatePublicIpAddress'   = $true;
         'BlockDeviceMapping'         = $blockDeviceMap;
-        'IamInstanceProfile'         = '';
+        'IamInstanceProfile'         = $iamInstanceProfile.Arn;
         'InstanceMonitoring_Enabled' = $true;
         'SecurityGroup'              = $sg;
         'UserData'                   = $userData;
@@ -504,7 +550,7 @@ echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;' -f $serviceFamily)
     $asLaunchConfiguration = Get-ASLaunchConfiguration -LaunchConfigurationName $asLaunchConfigurationParams.LaunchConfigurationName
 
     $asAutoScalingGroupParams = @{ 
-        'AutoScalingGroupName'             = $serviceFamily;
+        'AutoScalingGroupName'             = ("EC2ContainerService-{0}-EcsInstanceAsg-{1}" -f $serviceFamily, [DateTimeOffset]::Now.ToUnixTimeSeconds());
         'LaunchConfigurationName'          = $asLaunchConfiguration.LaunchConfigurationName;
         'MinSize'                          = 2;
         'MaxSize'                          = 2;
@@ -514,14 +560,63 @@ echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config;' -f $serviceFamily)
         'NewInstancesProtectedFromScaleIn' = $true;
         'Tag'                              = $nameTag,$serviceTag,$managementTag,$environmentTag;
         'TargetGroupARNs'                  = $elbTargetGroup.TargetGroupArn;
+        'VPCZoneIdentifier'                = ($subnetList -join ',');
     }
     New-ASAutoScalingGroup @asAutoScalingGroupParams
     $asAutoScalingGroup = Get-ASAutoScalingGroup -AutoScalingGroupName $asAutoScalingGroupParams.AutoScalingGroupName
+    $asAutoScalingGroup
+
+    Write-Output "`t Verifying ECS Capacity Provider Created..."
+    $ecsCapacityProviderParams = @{ 
+        'Name'                                                  = $("EC2ContainerService-{0}-EcsInstanceCp-{1}" -f $serviceFamily, [DateTimeOffset]::Now.ToUnixTimeSeconds());
+        'AutoScalingGroupProvider_AutoScalingGroupArn'          = $asAutoScalingGroup.AutoScalingGroupARN;
+        'AutoScalingGroupProvider_ManagedTerminationProtection' = "ENABLED";
+        'ManagedScaling_MaximumScalingStepSize'                 = 1;
+        'ManagedScaling_MinimumScalingStepSize'                 = 1;
+        'ManagedScaling_Status'                                 = "DISABLED";
+        'ManagedScaling_TargetCapacity'                         = 2;
+        'Tag'                                                   = $nameTag,$serviceTag,$managementTag,$environmentTag;
+    }
+    $ecsCapacityProvider = New-ECSCapacityProvider @ecsCapacityProviderParams
+    $ecsCapacityProvider
+
+    Write-Output "`t Verifying ECS Capacity Provider Created..."
+    do{
+        Write-Output "`t Checking ECS Capacity Provider status..."
+        $ecsCapacityProvider = Get-ECSCapacityProvider -CapacityProvider $ecsCapacityProvider.CapacityProviderArn
+        $ecsCapacityProvider
+        Start-Sleep -Seconds 5
+    } while($ecsCapacityProvider.Status -ne 'ACTIVE')
+    Write-Output "`t ECS Capacity Provider verified."
+
+    Write-Output "`t Creating ECS cluster..."
+    $clusterStrategyItem = New-Object -TypeName Amazon.ECS.Model.CapacityProviderStrategyItem
+    $clusterStrategyItem.Base = 0
+    $clusterStrategyItem.CapacityProvider = $ecsCapacityProvider.Name
+    $clusterStrategyItem.Weight = 1
 
     $clusterSetting = New-Object -TypeName Amazon.ECS.Model.ClusterSetting
     $clusterSetting.Name = "containerInsights"
     $clusterSetting.Value = "enabled"
-    $ecs = New-ECSCluster -ClusterName $serviceFamily -Tag $nameTag,$serviceTag,$managementTag,$environmentTag -Setting $clusterSetting
+    $ecs = New-ECSCluster -ClusterName $serviceFamily -Tag $nameTag,$serviceTag,$managementTag,$environmentTag -Setting $clusterSetting -CapacityProvider $ecsCapacityProvider.Name -DefaultCapacityProviderStrategy $clusterStrategyItem
+    $ecs
+    $ecs = Get-ECSClusterDetail -Cluster $ecs.ClusterArn
+
+    Write-Output "`t Verifying ECS Capacity Provider Created..."
+    do{
+        Write-Output "`t Checking ECS Cluster has propagated..."
+        $ecs = Get-ECSClusterDetail -Cluster $ecs.Clusters[0].ClusterArn
+        $ecs
+        Start-Sleep -Seconds 5
+    } while($ecs.Clusters[0].Status -ne 'ACTIVE')
+
+    do{
+        Write-Output "`t Checking ECS Cluster status..."
+        $ecs = Get-ECSClusterDetail -Cluster $ecs.Clusters[0].ClusterArn
+        $ecs
+        Start-Sleep -Seconds 5
+    } while($ecs.Clusters[0].Status -ne 'ACTIVE')
+    Write-Output "`t ECS cluster is active."
 }
 
 if($containerRepository) {
