@@ -314,6 +314,9 @@ do{
     Start-Sleep -Seconds 5
 } while($vpc.State -ne "available")
 
+Write-Output "`t Enabling VPC DNS hostnames..."
+Edit-EC2VpcAttribute -VpcId $vpc.VpcId -EnableDnsHostname $true
+
 Write-Output "`t Tagging VPC..."
 New-EC2Tag -Resource $vpc.VpcId -Tag $nameTag
 New-EC2Tag -Resource $vpc.VpcId -Tag $serviceTag
@@ -780,9 +783,31 @@ if($sgTest.VpcId -eq $vpc.VpcId) {
     $sgValidated = $true
 }
 
-$ec2KeyValidated = $false
-if ((Test-Path("{0}-ec2Key.fingerprint" -f $serviceFamily)) -and (Test-Path("{0}-ec2Key.pem" -f $serviceFamily))) {
-    Write-Output ("`t`t EC2 Key {0} validated" -f $serviceFamily)
+if($containerCluster) {
+    $ecsValidated = $false
+    $ec2KeyValidated = $false
+
+    try {
+        $ecsTest = Get-ECSClusterDetail -Cluster $ecs.Clusters[0].ClusterArn
+        if($ecsTest -ne $null) {
+            if($ecsTest.Clusters[0].Status -eq "ACTIVE") {
+                $ecsValidated = $true
+            }
+            
+            Write-Output ("`t`t ECS {0} validated" -f $ecsTest.Clusters[0].ClusterArn)
+            $ecsValidated = $true
+        }
+    } catch {
+        #
+    }
+
+    $ec2KeyValidated = $false
+    if ((Test-Path("{0}-ec2Key.fingerprint" -f $serviceFamily)) -and (Test-Path("{0}-ec2Key.pem" -f $serviceFamily))) {
+        Write-Output ("`t`t EC2 Key {0} validated" -f $serviceFamily)
+        $ec2KeyValidated = $true
+    }
+} else {
+    $ecsValidated = $true
     $ec2KeyValidated = $true
 }
 
@@ -813,7 +838,7 @@ if($containerRepository) {
     $ecrValidated = $true
 }
 
-if($vpcValidated -and (($subnetsValidated | Unique).Count -eq 1 -and $subnetsValidated[0] -eq $true) -and $igwValidated -and $sgValidated -and $ec2KeyValidated -and $elbValidated -and $ecrValidated) {
+if($vpcValidated -and (($subnetsValidated | Unique).Count -eq 1 -and $subnetsValidated[0] -eq $true) -and $igwValidated -and $sgValidated -and $ec2KeyValidated -and $ecsValidated -and $elbValidated -and $ecrValidated) {
     $validationPassed = $true
 }
 
