@@ -36,10 +36,7 @@ if(!($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adminis
 # Track whether any modules are installed
 $changesMade = $false
 
-# Update modules and cleanup old versions to minimize warnings during installation of any missing modules.
-Update-AWSToolsModule -CleanUp -AllowClobber -Force -Confirm
-
-# Check for modules required by this library
+# Check for AWS.Tools - First dependency
 if (!(Get-Module -ListAvailable -Name AWS.Tools.Installer) -or $force) {
     if($force) {
         Install-Module -Name AWS.Tools.Installer -AllowClobber -Force -Confirm
@@ -49,6 +46,9 @@ if (!(Get-Module -ListAvailable -Name AWS.Tools.Installer) -or $force) {
 
     $changesMade = $true
 }
+
+# Update modules and cleanup old versions to minimize warnings during installation of any missing modules.
+Update-AWSToolsModule -CleanUp -AllowClobber -Force -Confirm
 
 # Check for modules required by this library
 if (!(Get-Module -ListAvailable -Name AWS.Tools.Common) -or $force) {
